@@ -29,6 +29,9 @@ Hookup:
 - From Arduino to Speaker: TODO speaker for some reason doesn't play sound
   - 9 to +
   - GND to GND
+- Force Sensor
+  - One end to 5V
+  - Other end to analog in, 10k ohm resistor, then ground
 
 
 TODO Force sensing and conditional sound playing
@@ -39,11 +42,11 @@ TODO microphone recording, storing to SD and playback
 #include "SPI.h"
 #include "TMRpcm.h"
 
-// Do not change
-const int CHIP_SELECT = 8;
-const int SPEAKER_PIN = 9;
+#define CHIP_SELECT 8
+#define SPEAKER_PIN 9
+#define FORCE_SENSOR_PIN 0
+#define BAUD_RATE 19200 // View monitor at 9600 baud
 
-// Can be changed
 const int VOLUME = 6;
 
 Sd2Card card;
@@ -51,7 +54,7 @@ TMRpcm tmrpcm;
 
 void setup() {
   tmrpcm.speakerPin = SPEAKER_PIN;
-  Serial.begin(19200);
+  Serial.begin(BAUD_RATE);
 
   Serial.println("Initializing SD card");
 
@@ -71,5 +74,7 @@ void setup() {
 }
 
 void loop() { 
-  // delay(1000);
+  delay(1000);
+  int analog_read_force = analogRead(FORCE_SENSOR_PIN);
+  Serial.println(analog_read_force);
  }
