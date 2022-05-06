@@ -75,6 +75,20 @@ void setup() {
 
 void loop() { 
   delay(1000);
-  int analog_read_force = analogRead(FORCE_SENSOR_PIN);
-  Serial.println(analog_read_force);
+  int analog_force = analogRead(FORCE_SENSOR_PIN);
+  Serial.println(analog_force);
+  // TODO play different sounds based on amount of pressure
+  if (analog_force < 50) {
+    Serial.println("Do nothing");
+  }
+  else if (analog_force < 500) {
+    Serial.println("React to light touch");
+  }
+  else if (analog_force < 800) {
+    Serial.println("React to stronger touch");
+  }
+  else {
+    Serial.println("Ow");
+  }
+
  }
