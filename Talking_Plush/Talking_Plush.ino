@@ -105,23 +105,59 @@ bool started = false;
 bool stopped = false;
 bool play = false;
 bool paused = false;
+// Note these are button press lengths, variable names correspond to name of button
+unsigned long record_length = 0; 
+unsigned long play_length = 0;
 
 int record_high_count = 1;
 bool record_high = false;
+unsigned long rec_high_length = 0; // Button press 
 
-unsigned long record_length = 0;
-unsigned long play_length = 0;
-
-unsigned long rec_high_length = 0;
-
-int track_count = 0;
+int track_count = 1;
+int play_music_count = 1;
+bool play_music = false;
+bool pause_music = false;
+unsigned long music_length = 0; // Button press
 
 void loop() { 
 
+  // Play pre-recorded music if button is pressed. Incrememnt by one track
+  if (digitalRead(BUTTON_PIN_MUSIC) == 1) {
+    if (millis() - music_length > 200) {
+      if (play_music_count % 2 == 0) {
+        track_count++;
+      }
+      play_music_count++;
+      music_length = millis();
+      play_music = true;
+    }
+  }
+  if (play_music_count % 2 == 0 && play_music) {
+    digitalWrite(YELLOW_LED_PIN, HIGH);
+    if (track_count > NUM_TRACKS) {
+      track_count = 1;
+    }
+    Serial.println(track_count);
+    if (track_count == 1) {
+      audio.play("1.wav");
+    }
+    play_music = false;
+    pause_music = true;
+  }
+  else if (play_music_count % 2 != 0 && pause_music) {
+    Serial.println("Paused file");
+    digitalWrite(YELLOW_LED_PIN, LOW);
+    audio.pause();
+    digitalWrite(SPEAKER_PIN, LOW); // Prevent excess speaker noise
+    play_music = true;
+    pause_music = false;
+  }
+
+  // Record at high or low frequency if button is pressed
   if (digitalRead(BUTTON_PIN_RECORD_HIGH) == 1) {
     if (millis() - rec_high_length > 200) {
       record_high_count++;
-      rec_low_length = millis();
+      rec_high_length = millis();
       if (record_high_count % 2 == 0) {
         record_high = true;
         Serial.println(record_high);
@@ -133,6 +169,7 @@ void loop() {
     }
   }
 
+  // Record and play audio
   if (digitalRead(BUTTON_PIN_RECORD) == 1) {
     if (millis() - record_length > 200) {
       record_length = millis();
@@ -144,10 +181,9 @@ void loop() {
     if (millis() - play_length > 200) {
       play_length = millis();
       play_count++;
-        play = true;
+      play = true;
       }
   }
-
   if (record_count % 2 == 0 && started) {
     Serial.println("Recording");
     digitalWrite(RED_LED_PIN, HIGH);
