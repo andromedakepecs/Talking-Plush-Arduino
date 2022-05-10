@@ -31,9 +31,6 @@ Hookup:
 - From Arduino to Speaker:
   - 9 to +
   - GND to GND
-- Force Sensor
-  - One end to 5V
-  - Other end to analog in, 10k ohm resistor, then ground
 - Buttons connected to 10k ohm resistors in series. Connected to digital pins 3 and 4
 - Electret Microphone
  - See Electret Microphone with Arduino example circuits. Connected to A0
@@ -49,21 +46,23 @@ TODO microphone recording, storing to SD and playback
 #include "TMRpcm.h"
 
 // Digital
+#define BUTTON_PIN_RECORD_HIGH 2
 #define BUTTON_PIN_RECORD 3
 #define BUTTON_PIN_PLAY 4
+#define BUTTON_PIN_MUSIC 5
 #define RED_LED_PIN 7
 #define YELLOW_LED_PIN 8
 #define SPEAKER_PIN 9
 #define CHIP_SELECT_PIN 10
 
 // Analog
-#define ELECTRET_PIN 0
-#define FORCE_SENSOR_PIN 1
+const int ELECTRET_PIN = A0;
 
 #define BAUD_RATE 19200 // View monitor at 9600 baud
 
 const int VOLUME = 5;
 const int FREQUENCY = 16000;
+const int NUM_TRACKS = 4;
 
 // Sd2Card card;
 TMRpcm audio;
@@ -96,36 +95,43 @@ void setup() {
     digitalWrite(YELLOW_LED_PIN, LOW);
     return;
   }
-
-
-  // File my_file = SD.open("1.wav");
-  // if (my_file) {
-  //   while (my_file.available()) {
-  //     Serial.write(my_file.read());
-  //   }
-
-  //   my_file.close();
-  // }
-  // else {
-  //   Serial.println("Error");
-  // }
-
-  // tmrpcm.setVolume(VOLUME);
-  // tmrpcm.play("1.wav");
-  // delay(3000);
   
 }
 
+// Variables for recording and playback
 int record_count = 1;
 int play_count = 1;
 bool started = false;
 bool stopped = false;
 bool play = false;
 bool paused = false;
+
+int record_high_count = 1;
+bool record_high = false;
+
 unsigned long record_length = 0;
 unsigned long play_length = 0;
 
+unsigned long rec_high_length = 0;
+
+int track_count = 0;
+
 void loop() { 
+
+  if (digitalRead(BUTTON_PIN_RECORD_HIGH) == 1) {
+    if (millis() - rec_high_length > 200) {
+      record_high_count++;
+      rec_low_length = millis();
+      if (record_high_count % 2 == 0) {
+        record_high = true;
+        Serial.println(record_high);
+      }
+      else {
+        record_high = false;
+        Serial.println(record_high);
+      }
+    }
+  }
 
   if (digitalRead(BUTTON_PIN_RECORD) == 1) {
     if (millis() - record_length > 200) {
@@ -145,7 +151,13 @@ void loop() {
   if (record_count % 2 == 0 && started) {
     Serial.println("Recording");
     digitalWrite(RED_LED_PIN, HIGH);
-    audio.startRecording("MIC.WAV", FREQUENCY, A0);
+    if (record_high) {
+      audio.startRecording("MIC.WAV", FREQUENCY * 4, ELECTRET_PIN);
+    }
+    else {
+      audio.startRecording("MIC.WAV", FREQUENCY, ELECTRET_PIN);
+    }
+   
     started = false;
     stopped = true;
   }
@@ -172,24 +184,6 @@ void loop() {
     paused = false;
   }
 
-  // Only perform other program functions if not recording/playing
-  // if (digitalRead(BUTTON_PIN_RECORD) == LOW && digitalRead(BUTTON_PIN_PLAY) == LOW) {
-    
-  //   int analog_force = analogRead(FORCE_SENSOR_PIN);
-  //   Serial.println(analog_force);
-  //   // TODO play different sounds based on amount of pressure
-  //   if (analog_force < 50) {
-  //     Serial.println("Do nothing");
-  //   }
-  //   else if (analog_force < 500) {
-  //    Serial.println("React to light touch");
-  //   }
-  //   else if (analog_force < 900) {
-  //     Serial.println("React to stronger touch");
-  //   }
-  //   else {
-  //     Serial.println("Ow");
-  //   }
-  // }
+  
 
  }
